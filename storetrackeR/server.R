@@ -12,6 +12,24 @@
 # Define server logic required to draw a histogram
 shinyServer(function(input, output) {
 
+    # add new produt to rater
+    products <- reactiveValues(ind = c(1, 2))
+    
+    observeEvent(input$add_product,{
+       products$ind <- c(products$ind, max(products$ind)+1)
+    })
+    
+    observe({
+        output$product_stock <- renderUI({
+            # Create rows
+            items <- lapply(products$ind,function(i){
+                create_stock_rater(id = i)
+            })
+            do.call(shiny::tagList,items)
+            
+        })
+    })
+    
     
     output$storemap <- renderLeaflet({
         
