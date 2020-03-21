@@ -55,3 +55,15 @@ add_product <- function(name) {
   
   dbClearResult(res)
 }
+
+get_product_stock <- function(sm_id, product_id, date) {
+  res <- dbSendQuery(con, paste0("SELECT * FROM Stock WHERE Supermarket_ID = ", 
+                                 sm_id, " AND Product_ID = ", product_id))
+  df <- dbFetch(res) 
+  dbClearResult(res)
+  
+  df <- df %>% 
+    filter(lubridate::date(Date) == date)
+  
+  return(df)
+}

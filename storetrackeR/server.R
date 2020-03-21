@@ -12,6 +12,30 @@ library(shiny)
 # Define server logic required to draw a histogram
 shinyServer(function(input, output) {
 
+    store_capacity_df <- reactive({
+        get_customers(sm_ID = input$capacity_store, date = input$capacity_date) %>% 
+            mutate(Date = as.POSIXct(Date) + hours(Hour))
+    })
+    
+    product_stock_df <- reactive({
+        prod_id <- get_products() %>% filter(Name == input$stock_product) %>% pull(ID)
+        get_product_stock(sm_id = input$capacity_store, 
+                          product_id = prod_id,
+                          date = input$capacity_date) %>% 
+            mutate(Date = as.POSIXct(Date))
+    })
+    
+    output$store_capacity_plot <- renderPlot({
+        ggplot(store_capacity_df(), aes(x = Date, y = Customers)) +
+            geom_bar(stat = "identity") +
+            ylim(c(0,100))
+    })
+    
+    output$product_stock_plot <- renderPlot({
+        ggplot(product_stock_df(), aes(x = Date, y = Cap)) +
+            geom_bar(stat = "identity") +
+            ylim(c(0,100))
+    })
     
     output$storemap <- renderLeaflet({
         req(input$geoloc_lon)
