@@ -3,12 +3,13 @@
 install.packages("osmdata")
 install.packages("sf")
 install.packages("ggmap")
+install.packages("leaflet")
 
 library(tidyverse)
 library(osmdata)
 library(sf)
 library(ggmap)
-
+library(leaflet)
 
 #connect to osm
 
@@ -23,20 +24,18 @@ get_places <- function(city, key = "shop", value = "supermarket") {
   return(osm_places)
 }
 
+osm_supermarkets <-   get_places("kassel")
 
-get_places("Kassel")
-
-str(osm_supermarkets)
+#write.table(osm_supermarkets$osm_polygons, "C:/temp/workspace/storetracker/supermarkets.csv", sep = "\t", row.names = FALSE, col.names = TRUE)
 
 
-write.table(osm_supermarkets$osm_polygons, "C:/temp/workspace/storetracker/supermarkets.csv", sep = "\t", row.names = FALSE, col.names = TRUE)
+#leaflet erstellen
 
-ggmap(mad_map)+
-  geom_sf(data = osm_supermarkets$osm_points,
-          inherit.aes = FALSE,
-          colour = "#238443",
-          fill = "#004529",
-          alpha = .5,
-          size = 4,
-          shape = 21)+
-  labs(x = "", y = "")
+supermarkets_points <- osm_supermarkets$osm_points[!is.na(osm_supermarkets$osm_points$name), ]
+supermarkets_polygons <- osm_supermarkets$osm_polygons[!is.na(osm_supermarkets$osm_polygons$name), ]
+
+leaflet() %>% addTiles() %>% 
+  addPolygons(data = supermarkets_polygons)# %>% 
+  addMarkers(data = points)
+
+
