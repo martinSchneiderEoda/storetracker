@@ -11,6 +11,7 @@ library(sf)
 library(ggmap)
 library(leaflet)
 
+
 #connect to osm
 
 #available_features( )
@@ -37,11 +38,17 @@ get_places <- function(city, key = "shop", value = "supermarket") {
   sm_polygons[ setdiff(names(sm_polygons), cols_osm)] <- NULL
   sm_polygons[ setdiff(cols_osm, names(sm_polygons))] <- NA
   
-    return(rbind(sm_points, sm_polygons))
+  osm_places <- rbind(sm_points, sm_polygons)
+  
+  
+  osm_places$brand[is.na(osm_places$brand)] <- 
+    stringi::stri_trans_totitle(
+      str_extract(osm_places$name[is.na(osm_places$brand)], 
+                  pattern = "Aldi|Edeka|Rewe|tegut|Tegut|Lidl|ALDI|REWE|LIDL"))
+  
+    return(osm_places)
   
 }
-
-
 
 
 osm_supermarkets <-   get_places("kassel")
@@ -49,9 +56,44 @@ osm_supermarkets <-   get_places("kassel")
 #write.table(osm_supermarkets, "C:/temp/workspace/storetracker/supermarkets.csv", sep = "\t", row.names = FALSE, col.names = TRUE)
 
 
+icons(iconUrl = "./img/") 
 
+icon_files <- list.files("./img/", full.names = TRUE)
+names(icon_files) <- c("Aldi Nord"
+, "Edeka"
+, "Lidl"
+, "Rewe"
+, "other"
+,"Tegut")
+
+case_when(is.na(icon_files[osm_supermarkets$brand]) ~ icon_files[5], 
+          TRUE ~ icon_files[osm_supermarkets$brand])
+
+
+osm_supermarkets$name[is.na(osm_supermarkets$brand)] <- stringi::stri_trans_totitle(str_extract(osm_supermarkets$name[is.na(osm_supermarkets$brand)], pattern = "Aldi|Edeka|Rewe|tegut|Tegut|Lidl|ALDI|REWE|LIDL"))
+
+
+content <- paste(sep = "",
+                 "<br>",
+                 osm_supermarkets$name, 
+                 "</br><br>",
+                 paste(osm_supermarkets$addr.street, 
+                 osm_supermarkets$addr.housenumber), 
+                 "</br><br><br>",
+                 paste(osm_supermarkets$addr.postcode, 
+                 osm_supermarkets$addr.city), 
+                 "</br><br>", 
+                 ifelse(is.na(osm_supermarkets$opening_hours),"", osm_supermarkets$opening_hours),
+                 "</br>"
+)
+
+
+osm_supermarkets$brand
 
 
 leaflet() %>% addTiles() %>% 
-  addMarkers(data = osm_supermarkets)
+  addMarkers(data = osm_supermarkets,  icon = icons(case_when(is.na(icon_files[osm_supermarkets$brand]) ~ icon_files[5], 
+                                                        TRUE ~ icon_files[osm_supermarkets$brand]), iconWidth = 35), 
+             label = osm_supermarkets$name, 
+             popup = content)
 
