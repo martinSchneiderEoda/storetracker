@@ -49,6 +49,12 @@ shinyServer(function(input, output, session) {
                                         capacity = input[[cap_input]])
                   
         })
+        
+        update_visitors(sm_id = stores[input$visited_store],
+                        date = as.character(Sys.Date()),
+                        hour = hour(Sys.time()),
+                        cap = input$rate_occupancy)
+        
     })
 
     # nearby stores -----------------------------------------------------------
