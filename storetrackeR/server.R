@@ -51,8 +51,7 @@ shinyServer(function(input, output, session) {
         })
         
         update_visitors(sm_id = stores[input$visited_store],
-                        date = as.character(Sys.Date()),
-                        hour = hour(Sys.time()),
+                        date = as.character(Sys.time()),
                         cap = input$rate_occupancy)
         
     })
