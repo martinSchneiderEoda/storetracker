@@ -81,6 +81,22 @@ update_product_stock <- function(sm_id, product_id, date, capacity) {
   dbSendQuery(con, 'INSERT INTO Stock (Date, Supermarket_ID, Product_ID, Cap) VALUES (:Date, :Supermarket_ID, :Product_ID, :Cap);', df)
 }
 
+update_visitors <- function(sm_id, date, hour, cap) {
+  
+  df <- data.frame(
+    Date = date,
+    Hour = hour,
+    Supermarket_ID = sm_id,
+    Customers = cap
+    )
+  
+  dbSendQuery(con, 'INSERT INTO Visitors (Supermarket_ID, Date, Hour, Customers) VALUES (:Supermarket_ID, :Date, :Hour, :Customers);', df)
+  
+  
+}
+  
+  
+
 
 
 
