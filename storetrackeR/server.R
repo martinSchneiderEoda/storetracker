@@ -35,8 +35,28 @@ shinyServer(function(input, output, session) {
     rv <- reactiveValues(nearbystores = c("Arsch of"))
     
     observeEvent(input$geoloc_lon, {
-        rv$nearbystores = c(rv$nearbystores, "Schmoll 1", "Schmoll 2", "Schmoll 3")
+        
+        
+        markets <- tbl(con, "Supermarket") %>% 
+            collect()
+        
+        current_location <- c(input$geoloc_lon,
+                              input$geoloc_lat)
+        
+        dist = 0.5
+        
+        coord_df <- data.frame(markets, 
+                               nearby = geosphere::distHaversine(
+                                   markets %>% select(Lon, Lat), 
+                                   current_location
+                               ) / 1000 < dist)    
+        
+        rv$nearbystores <- coord_df %>% 
+                filter(nearby) %>% 
+                mutate(unique_ind = paste(Name, ID)) %>% 
+                pull(unique_ind)
     })
+    
     observe({
         output$visited_store <- renderUI({
             f7AutoComplete(inputId = "visited_store",
