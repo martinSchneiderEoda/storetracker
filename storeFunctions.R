@@ -34,3 +34,24 @@ get_auslastung <- function(sm_ID, date) {
   return(customers)  
 }
 
+get_products <- function() {
+  res <- dbSendQuery(con, "SELECT * FROM Products")
+  
+  df <- dbFetch(res)
+  
+  dbClearResult(res)
+  
+  return(df)
+}
+
+
+add_product <- function(name) {
+  res <- dbSendQuery(con, "SELECT COUNT(1) FROM Products")
+  n_products <- dbFetch(res)
+  dbClearResult(res)
+  
+  res <- dbSendQuery(con, paste0("INSERT INTO Products (ID, Name) VALUES (", 
+                                 n_products + 1, ", '", name, "')"))
+  
+  dbClearResult(res)
+}
