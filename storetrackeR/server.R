@@ -35,8 +35,10 @@ shinyServer(function(input, output, session) {
     # nearby stores -----------------------------------------------------------
     rv <- reactiveValues(nearbystores = c("Arsch of"))
     
-    observeEvent(input$geoloc_lon, {
+    observe({
         
+        req(input$geoloc_lon)
+        req(input$geoloc_lat)
         
         markets <- tbl(con, "Supermarket") %>% 
             collect()
@@ -56,6 +58,10 @@ shinyServer(function(input, output, session) {
                 filter(nearby) %>% 
                 mutate(unique_ind = paste(Name, ID)) %>% 
                 pull(unique_ind)
+        
+        rv$nearbystoresIds <- coord_df %>% 
+            filter(nearby) %>% 
+            pull(ID)
     })
     
     observe({
@@ -136,17 +142,50 @@ shinyServer(function(input, output, session) {
     })
     
     # store table ------------------------------------------------------------
-    output$store_rec_table <- renderDataTable(
-        data.frame(
-            Store = c("Schmoll 1", "Schmoll 2", "Schmoll 3"),
-            Auslastung = c("voll", "voll", "leer"),
-            Bananen = c("hoch", "niedrig", "mittel"),
-            Klopapier = c("leer", "leer", "leer"),
-            Nudeln = c("leer", "hoch", "leer"),
-            stringsAsFactors = FALSE
-        ) %>% 
+    output$store_rec_table <- renderDataTable({
+        
+        wanted_products_ids <- input$searchproducts
+        nearby_stores_ids <- rv$nearbystoresIds
+
+        wanted_store_cap <- tbl(con, "Stock") %>%
+            filter(Product_ID %in% wanted_products_ids & Supermarket_ID %in% nearby_stores_ids &
+                       Date %in% current_time_frame) %>%
+            collect() %>%
+            group_by(Supermarket_ID, Product_ID) %>%
+            summarise(
+                Cap = median(Cap)
+            )
+
+        wanted_store_cap
+
+        store_names <- tbl(con, "Supermarket") %>%
+            select(ID, Name) %>%
+            filter(ID %in% nearby_stores_ids) %>%
+            collect()
+
+        wanted_store_cap <- left_join(wanted_store_cap, store_names,
+                                      by = c("Supermarket_ID" = "ID")) %>%
+            rename(Supermarket_Name = Name)
+
+        product_names <- tbl(con, "Products") %>%
+            filter(ID %in% wanted_products_ids) %>%
+            collect()
+
+        product_names
+
+        wanted_store_cap <- left_join(wanted_store_cap, product_names,
+                                      by = c("Product_ID" = "ID")) %>%
+            rename(Product_Name = Name)
+
+        wanted_store_cap %>%
+            select(-Product_ID) %>%
+            pivot_wider(names_from = Product_Name,
+                        values_from = Cap) %>% 
+            ungroup() %>% 
+            select(-Supermarket_ID) %>% 
+            rename(Markt = "Supermarket_Name") %>% 
             datatable(options = list(dom = "t",
                                      scrollX = TRUE),
                       rownames = FALSE)
-    )
+    })
 })

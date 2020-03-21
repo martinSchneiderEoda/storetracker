@@ -6,9 +6,12 @@ library(shiny)
 library(shinyMobile)
 library(leaflet)
 library(DT)
-
-
-
+library(DBI)
+library(lubridate)
+library(geosphere)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
 
 # source -------------------------------------------------------------------------
 
@@ -21,4 +24,6 @@ con <- dbConnect(RSQLite::SQLite(), "../storeTrackeDB.sqlite")
 # -------------------------------------------------------------------------
 
 # replace with db
-product_choices <- c("Bananen", "Klopapier", "Nudeln")
+product_choices <- tbl(con, "Products") %>% pull(ID) 
+
+names(product_choices) <- tbl(con, "Products") %>% pull(Name) 
