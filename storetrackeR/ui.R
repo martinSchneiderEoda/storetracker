@@ -72,15 +72,15 @@ f7Page(title = "storetracker",
                                                 choices = c("leer", "wenig", "normal", "voll")
                                        )
                        )
-                      ),
+                     ),
                      
                      actionButton(inputId = "add_product",
                                   label = "add Product")
                      
-                     )
+               )
            )
-        )
-           
-      
+       )
+       
+       
 )
 

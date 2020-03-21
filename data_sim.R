@@ -97,8 +97,11 @@ prod_cap <- prod_cap %>%
          Date = as.character(Date)) %>% 
   ungroup()
 
+miss_ind <- sample(1:nrow(prod_cap), 800*4*14, replace = TRUE)
 
-dbWriteTable(con, "Stock", prod_cap, overwrite = TRUE)
+dbWriteTable(con, "Stock",  prod_cap %>%
+               mutate(Cap = if_else(row_number() %in% miss_ind, as.numeric(NA), Cap)) %>% 
+               fill(Cap, .direction = "down"), overwrite = TRUE)
 dbClearResult(res)
 
 
