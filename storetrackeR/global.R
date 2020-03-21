@@ -37,4 +37,3 @@ names(stores) <- tbl(con, "Supermarket") %>% pull(Name)
 
 store_choices <- tbl(con, "Supermarket") %>% pull(Name)
   
-

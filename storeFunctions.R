@@ -54,7 +54,8 @@ get_customers <- function(sm_id, date, full_day = TRUE) {
       select(-Supermarket_ID)
   } 
   
-  return(result_df)
+  return(result_df %>% 
+           mutate_if(is.numeric, round))
 }
 
 get_auslastung <- function(sm_ID, date) {
