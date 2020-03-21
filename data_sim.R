@@ -5,6 +5,9 @@ library(tsibbledata)
 library(lubridate)
 library(tsibble)
 
+
+
+# Kassel Stores -----------------------------------------------------------
 sm_df <- tibble(ID = 1:800, Name = if_else(is.na(cinema$osm_points$name), "", cinema$osm_points$name), 
                 Lon = st_coordinates(st_centroid(cinema$osm_points$geometry))[,1], 
                 Lat = st_coordinates(st_centroid(cinema$osm_points$geometry))[,2], City = "Kassel")
@@ -51,9 +54,10 @@ for (i in 1:800){
     select(-NewDate) %>% 
     group_by(Date, Hour) %>% 
     summarize(Demand = sum(Demand)) %>% 
-    ungroup() %>% 
-    mutate(Demand = Demand * 100 / max(Demand),
-           Demand = if_else(between(Hour, 8, 20), Demand, 0)) %>% 
+    ungroup(Hour) %>% 
+    mutate(Demand = (Demand - min(Demand)) * 100 / diff(range(Demand)),
+           Demand = if_else(between(Hour, 8, 20), Demand, 0)) %>%
+    ungroup() %>%
     rename(Customers = Demand) %>% 
     mutate(Supermarket_ID = i) %>% 
     bind_rows(visitors, .)
@@ -70,6 +74,7 @@ dbFetch(res)
 dbClearResult(res)
 
 
+# Products ----------------------------------------------------------------
 products <- tibble(ID = 1:3, Name = c("Klopapier", "Seife", "Nudeln"))
 
 dbWriteTable(con, "Products", products)
@@ -77,6 +82,25 @@ dbWriteTable(con, "Products", products)
 res <- dbSendQuery(con, "SELECT * FROM Products")
 dbFetch(res)
 
+
+# Product Capacity --------------------------------------------------------
+prod_cap <- expand.grid(Date = seq.POSIXt(as.POSIXct("2020-03-16"),as.POSIXct("2020-03-23"), by = "hour"),
+                        Supermarket_ID = 1:800,
+                        Product_ID = 1:4) %>% 
+  as_tibble()
+
+prod_cap <- prod_cap %>% 
+  mutate(Cap = rnorm(n(), sd = 15)) %>% 
+  group_by(Supermarket_ID, Product_ID) %>% 
+  mutate(Cap = Cap - min(Cap) * 100 / diff(range(Cap)),
+         Cap = if_else(between(hour(Date), 8, 20), round(Cap), 0),
+         Date = as.character(Date)) %>% 
+  ungroup()
+
+
+dbWriteTable(con, "Stock", prod_cap, overwrite = TRUE)
 dbClearResult(res)
+
+
 
 dbDisconnect(con)
