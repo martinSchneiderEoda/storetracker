@@ -2,6 +2,7 @@ library(DBI)
 library(sf)
 library(forecast)
 library(tsibbledata)
+library(tidyverse)
 library(lubridate)
 library(tsibble)
 
@@ -14,8 +15,12 @@ sm_df <- tibble(ID = 1:nrow(sm_df), Name = if_else(is.na(sm_df$name), "", sm_df$
                 Lon = unlist(str_extract_all(sm_df$geometry, "[0-9]+\\.[0-9]+") %>% lapply("[[",1)), 
                 Lat = unlist(str_extract_all(sm_df$geometry, "[0-9]+\\.[0-9]+") %>% lapply("[[",2)), 
                 City = "Kassel") %>% 
-  mutate_at(vars(Lon, Lat), as.numeric)
-
+  mutate_at(vars(Lon, Lat), as.numeric) %>% 
+  group_by(Name) %>% 
+  mutate(Number = 1:n()) %>% 
+  ungroup() %>% 
+  mutate(Name = if_else(Number == 1, Name, paste0(Name, "_", Number))) %>% 
+  select(-Number)
 
 
 con <- dbConnect(RSQLite::SQLite(), "storeTrackeDB.sqlite")

@@ -30,5 +30,10 @@ product_choices <- tbl(con, "Products") %>% pull(ID)
 
 names(product_choices) <- tbl(con, "Products") %>% pull(Name) 
 
+
 stores <- tbl(con, "Supermarket") %>% pull(ID)
 names(stores) <- tbl(con, "Supermarket") %>% pull(Name) 
+
+store_choices <- tbl(con, "Supermarket") %>% pull(Name)
+  
+
