@@ -27,3 +27,6 @@ con <- dbConnect(RSQLite::SQLite(), "../storeTrackeDB.sqlite")
 product_choices <- tbl(con, "Products") %>% pull(ID) 
 
 names(product_choices) <- tbl(con, "Products") %>% pull(Name) 
+
+store_choices <- tbl(con, "Supermarket") %>% pull(Name)
+  
