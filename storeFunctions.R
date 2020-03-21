@@ -1,7 +1,15 @@
 get_customers <- function(sm_id, date, full_day = TRUE) {
   current_ts <- Sys.time()
   
-  all_dates <- seq(as.POSIXct(lubridate::date(date)), length.out = 24, by = "hours")
+  if(length(sm_id) > 1) {
+    full_day <- FALSE
+  }
+  
+  if(full_day){
+    all_dates <- seq(as.POSIXct(lubridate::date(date)), length.out = 24, by = "hours")
+  } else {
+    all_dates <- date
+  }
   
   result_df <- tibble(Date = as.POSIXct(character()),
                       Customers = numeric(),
@@ -44,10 +52,7 @@ get_customers <- function(sm_id, date, full_day = TRUE) {
   if(full_day){
     result_df <- result_df %>% 
       select(-Supermarket_ID)
-  } else {
-    result_df <- result_df %>% 
-      filter(Date == date)
-  }
+  } 
   
   return(result_df)
 }
