@@ -60,7 +60,9 @@ for (i in 1:800){
   
 }
 
-dbWriteTable(con, "Visitors", visitors %>% mutate_at(vars(Date), as.character), overwrite = TRUE)
+dbWriteTable(con, "Visitors", visitors %>% 
+               mutate_at(vars(Date), as.character) %>% 
+               mutate_at(vars(Customers), round), overwrite = TRUE)
 
 res <- dbSendQuery(con, "SELECT * FROM Visitors WHERE Supermarket_ID = 40")
 dbFetch(res)
