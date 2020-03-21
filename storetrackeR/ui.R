@@ -5,7 +5,6 @@ f7Page(title = "storetracker",
        f7TabLayout(
            navbar = f7Navbar(title = "Storetracker"),
            f7Tabs(
-               f7Tab(tabName = "Login"),
                f7Tab(tabName = "Store Capacity",
                      f7Select(inputId = "capacity_store",
                               label = "Store ID",
@@ -31,7 +30,7 @@ f7Page(title = "storetracker",
                ),
                f7Tab(tabName = "Track Store",
                    
-                     uiOutput("visited_store"),
+                     uiOutput("visited_storeU"),
                      
                      f7Slider(inputId = "rate_occupancy",
                               label = "Occupancy",
@@ -42,8 +41,12 @@ f7Page(title = "storetracker",
                     f7Accordion(
                        uiOutput("product_stock")
                       ),
-                     actionButton(inputId = "add_product",
-                                  label = "add Product")
+                   
+                     f7Button(inputId = "add_product",
+                                  label = "add Product"),
+                     
+                    f7Button(inputId = "submit_stock",
+                                 label = "Submit Input")
                )
            )
 

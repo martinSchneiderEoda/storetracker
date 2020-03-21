@@ -12,6 +12,8 @@ library(geosphere)
 library(dplyr)
 library(ggplot2)
 library(tidyr)
+library(stringr)
+library(geoloc)
 
 # source -------------------------------------------------------------------------
 
@@ -27,3 +29,6 @@ con <- dbConnect(RSQLite::SQLite(), "../storeTrackeDB.sqlite")
 product_choices <- tbl(con, "Products") %>% pull(ID) 
 
 names(product_choices) <- tbl(con, "Products") %>% pull(Name) 
+
+stores <- tbl(con, "Supermarket") %>% pull(ID)
+names(stores) <- tbl(con, "Supermarket") %>% pull(Name) 

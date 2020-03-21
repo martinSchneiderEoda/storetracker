@@ -13,7 +13,7 @@
 shinyServer(function(input, output, session) {
 
     # add new produt to rater ---------------------------------------------
-    products <- reactiveValues(ind = c(1, 2))
+    products <- reactiveValues(ind = c(1))
     
     observeEvent(input$add_product,{
        products$ind <- c(products$ind, max(products$ind)+1)
@@ -30,7 +30,26 @@ shinyServer(function(input, output, session) {
         })
     })
     
-
+    # write user input in db --------------------------------------------------
+    observeEvent(input$submit_stock, {
+       
+        ind <- str_subset(names(input), "select_product")
+        
+        lapply(ind,
+               function(x) {
+                   
+                   cap_input <- str_replace_all(x, 
+                                                pattern = "select_",
+                                                replacement = "stock_")
+                  
+                  
+                   update_product_stock(sm_id = stores[input$visited_store],
+                                        product_id =  product_choices[input[[x]]],
+                                        date = as.character(Sys.time()),
+                                        capacity = input[[cap_input]])
+                  
+        })
+    })
 
     # nearby stores -----------------------------------------------------------
     rv <- reactiveValues(nearbystores = c("Arsch of"))
@@ -56,8 +75,7 @@ shinyServer(function(input, output, session) {
         
         rv$nearbystores <- coord_df %>% 
                 filter(nearby) %>% 
-                mutate(unique_ind = paste(Name, ID)) %>% 
-                pull(unique_ind)
+                pull(Name)
         
         rv$nearbystoresIds <- coord_df %>% 
             filter(nearby) %>% 
@@ -65,7 +83,7 @@ shinyServer(function(input, output, session) {
     })
     
     observe({
-        output$visited_store <- renderUI({
+        output$visited_storeU <- renderUI({
             f7AutoComplete(inputId = "visited_store",
                            label = "Store",
                            choices = rv$nearbystores)
@@ -162,7 +180,6 @@ shinyServer(function(input, output, session) {
                 Cap = median(Cap)
             )
 
-        wanted_store_cap
 
         store_names <- tbl(con, "Supermarket") %>%
             select(ID, Name) %>%
@@ -176,9 +193,7 @@ shinyServer(function(input, output, session) {
         product_names <- tbl(con, "Products") %>%
             filter(ID %in% wanted_products_ids) %>%
             collect()
-
-        product_names
-
+      
         wanted_store_cap <- left_join(wanted_store_cap, product_names,
                                       by = c("Product_ID" = "ID")) %>%
             rename(Product_Name = Name)

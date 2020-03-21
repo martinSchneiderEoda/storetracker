@@ -67,3 +67,20 @@ get_product_stock <- function(sm_id, product_id, date) {
            filter(lubridate::date(Date) == date))
 
 }
+
+
+update_product_stock <- function(sm_id, product_id, date, capacity) {
+ 
+  df <- data.frame(
+    Date = date,
+    Supermarket_ID = sm_id,
+    Product_ID = product_id,
+    Cap = capacity,
+    stringsAsFactors = FALSE
+  )
+  dbSendQuery(con, 'INSERT INTO Stock (Date, Supermarket_ID, Product_ID, Cap) VALUES (:Date, :Supermarket_ID, :Product_ID, :Cap);', df)
+}
+
+
+
+
