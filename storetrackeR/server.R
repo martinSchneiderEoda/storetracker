@@ -13,7 +13,7 @@
 shinyServer(function(input, output, session) {
 
     # add new produt to rater ---------------------------------------------
-    products <- reactiveValues(ind = c(1, 2))
+    products <- reactiveValues(ind = c(1))
     
     observeEvent(input$add_product,{
        products$ind <- c(products$ind, max(products$ind)+1)
@@ -30,7 +30,32 @@ shinyServer(function(input, output, session) {
         })
     })
     
-
+    # write user input in db --------------------------------------------------
+    observeEvent(input$submit_stock, {
+       
+        ind <- str_subset(names(input), "select_product")
+        
+        lapply(ind,
+               function(x) {
+                   
+                   cap_input <- str_replace_all(x, 
+                                                pattern = "select_",
+                                                replacement = "stock_")
+                  
+                  
+                   update_product_stock(sm_id = stores[input$visited_store],
+                                        product_id =  product_choices[input[[x]]],
+                                        date = as.character(Sys.time()),
+                                        capacity = input[[cap_input]])
+                  
+        })
+        
+        update_visitors(sm_id = stores[input$visited_store],
+                        date = as.character(Sys.Date()),
+                        hour = hour(Sys.time()),
+                        cap = input$rate_occupancy)
+        
+    })
 
     # nearby stores -----------------------------------------------------------
     rv <- reactiveValues(nearbystores = data.frame(ID = numeric(), Name = character(), 
@@ -59,10 +84,11 @@ shinyServer(function(input, output, session) {
                 filter(nearby) %>% 
                 select(ID, Name, distance) %>% 
                 mutate_at(vars(distance), ~round(.,2))
+
     })
     
     observe({
-        output$visited_store <- renderUI({
+        output$visited_storeU <- renderUI({
             f7AutoComplete(inputId = "visited_store",
                            label = "Store",
                            choices = rv$nearbystores$Name)
@@ -147,11 +173,11 @@ shinyServer(function(input, output, session) {
         nearby_stores_ids <- rv$nearbystores$ID
         
         wanted_date <- as.POSIXct(input$searchdate) + hours(input$searchhour)
-        
+ 
         wanted_store_cap <- get_product_stock(sm_id = nearby_stores_ids, 
                                               product_id = wanted_products_ids,
                                               date = wanted_date)
-        wanted_store_cap
+
 
         wanted_store_cap <- left_join(wanted_store_cap, rv$nearbystores,
                                       by = c("Supermarket_ID" = "ID")) %>%
@@ -160,9 +186,7 @@ shinyServer(function(input, output, session) {
         product_names <- tbl(con, "Products") %>%
             filter(ID %in% wanted_products_ids) %>%
             collect()
-
-        product_names
-
+      
         wanted_store_cap <- left_join(wanted_store_cap, product_names,
                                       by = c("Product_ID" = "ID")) %>%
             rename(Product_Name = Name)
