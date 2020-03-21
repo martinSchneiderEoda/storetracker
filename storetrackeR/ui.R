@@ -1,10 +1,5 @@
 
 
-library(shiny)
-library(shinyMobile)
-library(leaflet)
-library(DT)
-
 f7Page(title = "storetracker",
        geoloc::onload_geoloc(),
        f7TabLayout(

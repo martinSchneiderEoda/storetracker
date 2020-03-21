@@ -14,6 +14,8 @@ shinyServer(function(input, output) {
 
     
     output$storemap <- renderLeaflet({
+        
+        
         req(input$geoloc_lon)
         req(input$geoloc_lat)
         leaflet() %>% 
