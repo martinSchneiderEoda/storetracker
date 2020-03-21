@@ -61,9 +61,9 @@ get_product_stock <- function(sm_id, product_id, date) {
                                  sm_id, " AND Product_ID = ", product_id))
   df <- dbFetch(res) 
   dbClearResult(res)
-  
-  df <- df %>% 
-    filter(lubridate::date(Date) == date)
-  
-  return(df)
+ 
+  return(df %>% 
+           mutate(Date = as.POSIXct(Date)) %>% 
+           filter(lubridate::date(Date) == date))
+
 }

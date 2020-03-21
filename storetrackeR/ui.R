@@ -42,12 +42,11 @@ f7Page(title = "storetracker",
                     f7Accordion(
                        uiOutput("product_stock")
                       ),
-                     
                      actionButton(inputId = "add_product",
                                   label = "add Product")
-                     
-                     )
+               )
            )
+
         )
 )
 

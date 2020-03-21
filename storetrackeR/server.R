@@ -92,6 +92,37 @@ shinyServer(function(input, output, session) {
             ylim(c(0,100))
     })
 
+    store_capacity_df <- reactive({
+        get_customers(sm_ID = input$capacity_store, date = input$capacity_date) %>% 
+            mutate(Date = as.POSIXct(Date) + hours(Hour))
+    })
+    
+    product_stock_df <- reactive({
+        prod_id <- get_products() %>% filter(Name == input$stock_product) %>% pull(ID)
+        get_product_stock(sm_id = input$capacity_store, 
+                          product_id = prod_id,
+                          date = input$capacity_date) 
+    })
+    
+    output$store_capacity_plot <- renderPlot({
+        ggplot(store_capacity_df(), aes(x = Date, y = Customers)) +
+            geom_bar(stat = "identity") +
+            ylim(c(0,100)) +
+            xlab("Uhrzeit") +
+            ggtitle("Kundenauslastung") +
+            ylab("") +
+            theme_minimal()
+    })
+    
+    output$product_stock_plot <- renderPlot({
+        ggplot(product_stock_df(), aes(x = Date, y = Cap)) +
+            geom_bar(stat = "identity") +
+            ylim(c(0,100)) + 
+            xlab("Uhrzeit") +
+            ggtitle("Produktverfügbarkeit") +
+            ylab("") +
+            theme_minimal()
+    })
     
     # map ------------------------------------------------------------------
     output$storemap <- renderLeaflet({
