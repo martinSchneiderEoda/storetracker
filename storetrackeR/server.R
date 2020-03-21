@@ -92,8 +92,8 @@ shinyServer(function(input, output, session) {
                               filter(Name == input$capacity_store) %>% 
                               pull(ID), 
                           product_id = prod_id,
-                          date = input$capacity_date) %>% 
-            mutate(Date = as.POSIXct(Date))
+                          date = input$capacity_date,
+                          full_day = TRUE) 
     })
     
     output$store_capacity_plot <- renderPlot({
@@ -133,21 +133,9 @@ shinyServer(function(input, output, session) {
         wanted_products_ids <- input$searchproducts
         nearby_stores_ids <- rv$nearbystoresIds
         
-        frame_length = 4
-        
-        current_time_frame <- seq(round_date(Sys.time(), "hour"),
-                                  length.out = frame_length,
-                                  by = "hours") %>% as.character()
-
-        wanted_store_cap <- tbl(con, "Stock") %>%
-            filter(Product_ID %in% wanted_products_ids & Supermarket_ID %in% nearby_stores_ids &
-                       Date %in% current_time_frame) %>%
-            collect() %>%
-            group_by(Supermarket_ID, Product_ID) %>%
-            summarise(
-                Cap = median(Cap)
-            )
-
+        wanted_store_cap <- get_product_stock(sm_id = nearby_stores_ids, 
+                                              product_id = wanted_products_ids,
+                                              date = round_date(Sys.time(), "hour"))
         wanted_store_cap
 
         store_names <- tbl(con, "Supermarket") %>%
