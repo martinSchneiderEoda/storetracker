@@ -50,7 +50,7 @@ shinyServer(function(input, output, session) {
         
         coord_df <- data.frame(markets, 
                                nearby = geosphere::distHaversine(
-                                   markets %>% select(Lon, Lat), 
+                                   markets %>% select(Lon, Lat) %>% mutate_all(as.numeric),
                                    current_location
                                ) / 1000 < dist)    
         
@@ -146,6 +146,12 @@ shinyServer(function(input, output, session) {
         
         wanted_products_ids <- input$searchproducts
         nearby_stores_ids <- rv$nearbystoresIds
+        
+        frame_length = 4
+        
+        current_time_frame <- seq(round_date(Sys.time(), "hour"),
+                                  length.out = frame_length,
+                                  by = "hours") %>% as.character()
 
         wanted_store_cap <- tbl(con, "Stock") %>%
             filter(Product_ID %in% wanted_products_ids & Supermarket_ID %in% nearby_stores_ids &
