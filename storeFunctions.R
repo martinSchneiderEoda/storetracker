@@ -57,17 +57,17 @@ add_product <- function(name) {
 }
 
 
-get_product_stock <- function(sm_id, product_id, date) {
-  res <- dbSendQuery(con, paste0("SELECT * FROM Stock WHERE Supermarket_ID = ", 
-                                 sm_id, " AND Product_ID = ", product_id))
-  df <- dbFetch(res) 
-  dbClearResult(res)
- 
-  return(df %>% 
-           mutate(Date = as.POSIXct(Date)) %>% 
-           filter(lubridate::date(Date) == date))
-
-}
+# get_product_stock <- function(sm_id, product_id, date) {
+#   res <- dbSendQuery(con, paste0("SELECT * FROM Stock WHERE Supermarket_ID = ", 
+#                                  sm_id, " AND Product_ID = ", product_id))
+#   df <- dbFetch(res) 
+#   dbClearResult(res)
+#  
+#   return(df %>% 
+#            mutate(Date = as.POSIXct(Date)) %>% 
+#            filter(lubridate::date(Date) == date))
+# 
+# }
 
 
 update_product_stock <- function(sm_id, product_id, date, capacity) {
