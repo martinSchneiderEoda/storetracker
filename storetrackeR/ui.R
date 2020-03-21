@@ -16,17 +16,16 @@ f7Page(title = "storetracker",
                      dataTableOutput("store_rec_table")
                ),
                f7Tab(tabName = "Track Store",
-                     f7AutoComplete(inputId = "visited_store",
-                                    label = "Store",
-                                    choices = c("Schmoll 1", "Schmoll 2", "Schmoll3")),
+                   
+                     uiOutput("visited_store"),
                      
-                     f7Select(inputId = "rate_occupancy",
+                     f7Slider(inputId = "rate_occupancy",
                               label = "Occupancy",
-                              choices = c("leer", "wenig", "normal", "voll")),
-                    
-                     f7Accordion(
-                       create_stock_rater(id = 1),
-                       create_stock_rater(id = 2),
+                              min = 0,
+                              max = 100,
+                              value = 50),
+                     
+                    f7Accordion(
                        uiOutput("product_stock")
                       ),
                      
@@ -36,7 +35,5 @@ f7Page(title = "storetracker",
                      )
            )
         )
-           
-      
 )
 

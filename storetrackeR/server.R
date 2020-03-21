@@ -10,9 +10,9 @@
 
 
 # Define server logic required to draw a histogram
-shinyServer(function(input, output) {
+shinyServer(function(input, output, session) {
 
-    # add new produt to rater
+    # add new produt to rater ---------------------------------------------
     products <- reactiveValues(ind = c(1, 2))
     
     observeEvent(input$add_product,{
@@ -30,7 +30,23 @@ shinyServer(function(input, output) {
         })
     })
     
+
+    # nearby stores -----------------------------------------------------------
+    rv <- reactiveValues(nearbystores = c("Arsch of"))
     
+    observeEvent(input$geoloc_lon, {
+        rv$nearbystores = c(rv$nearbystores, "Schmoll 1", "Schmoll 2", "Schmoll 3")
+    })
+    observe({
+        output$visited_store <- renderUI({
+            f7AutoComplete(inputId = "visited_store",
+                           label = "Store",
+                           choices = rv$nearbystores)
+        })
+    })
+    
+    
+    # map ------------------------------------------------------------------
     output$storemap <- renderLeaflet({
         
         
@@ -41,6 +57,7 @@ shinyServer(function(input, output) {
             setView(as.numeric(input$geoloc_lon), as.numeric(input$geoloc_lat), zoom = 17)
     })
     
+    # store table ------------------------------------------------------------
     output$store_rec_table <- renderDataTable(
         data.frame(
             Store = c("Schmoll 1", "Schmoll 2", "Schmoll 3"),
