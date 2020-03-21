@@ -14,21 +14,24 @@ shinyServer(function(input, output) {
 
     
     output$storemap <- renderLeaflet({
-        
+        req(input$geoloc_lon)
+        req(input$geoloc_lat)
         leaflet() %>% 
-            addTiles() %>% 
+            addTiles() %>%
             setView(as.numeric(input$geoloc_lon), as.numeric(input$geoloc_lat), zoom = 17)
     })
     
-    output$store_rec_table <- renderTable({
+    output$store_rec_table <- renderDataTable(
         data.frame(
             Store = c("Schmoll 1", "Schmoll 2", "Schmoll 3"),
-            Adresse = c("absesf", "abdssdfs", "fvbsdfe"),
             Auslastung = c("voll", "voll", "leer"),
             Bananen = c("hoch", "niedrig", "mittel"),
             Klopapier = c("leer", "leer", "leer"),
             Nudeln = c("leer", "hoch", "leer"),
             stringsAsFactors = FALSE
-        )
-    })
+        ) %>% 
+            datatable(options = list(dom = "t",
+                                     scrollX = TRUE),
+                      rownames = FALSE)
+    )
 })
