@@ -76,8 +76,10 @@ for (i in 1:nrow(sm_df)){
 }
 
 dbWriteTable(con, "Visitors", visitors %>% 
+               mutate(Date = as.POSIXct(Date) + hours(Hour - 1)) %>% 
                mutate_at(vars(Date), as.character) %>% 
-               mutate_at(vars(Customers), round), overwrite = TRUE)
+               mutate_at(vars(Customers), round) %>% 
+               select(-Hour), overwrite = TRUE)
 
 res <- dbSendQuery(con, "SELECT * FROM Visitors WHERE Supermarket_ID = 40")
 dbFetch(res)

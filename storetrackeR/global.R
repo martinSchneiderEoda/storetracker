@@ -19,7 +19,7 @@ library(geoloc)
 
 source("../storeFunctions.R")
 source("../uiFunctions.R")
-source("../get_product_stock.R")
+
 
 con <- dbConnect(RSQLite::SQLite(), "../storeTrackeDB.sqlite")
 
