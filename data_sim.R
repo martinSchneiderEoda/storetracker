@@ -13,7 +13,8 @@ sm_df <- read_delim("supermarkets.csv", delim = "\t") %>% filter(!is.na(geometry
 sm_df <- tibble(ID = 1:nrow(sm_df), Name = if_else(is.na(sm_df$name), "", sm_df$name), 
                 Lon = unlist(str_extract_all(sm_df$geometry, "[0-9]+\\.[0-9]+") %>% lapply("[[",1)), 
                 Lat = unlist(str_extract_all(sm_df$geometry, "[0-9]+\\.[0-9]+") %>% lapply("[[",2)), 
-                City = "Kassel")
+                City = "Kassel") %>% 
+  mutate_at(vars(Lon, Lat), as.numeric)
 
 
 
