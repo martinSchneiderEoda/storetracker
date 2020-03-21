@@ -54,7 +54,8 @@ get_customers <- function(sm_id, date, full_day = TRUE) {
       select(-Supermarket_ID)
   } 
   
-  return(result_df)
+  return(result_df %>% 
+           mutate_if(is.numeric, round))
 }
 
 get_auslastung <- function(sm_ID, date) {
@@ -93,6 +94,48 @@ add_product <- function(name) {
   
   dbClearResult(res)
 }
+
+
+
+# get_product_stock <- function(sm_id, product_id, date) {
+#   res <- dbSendQuery(con, paste0("SELECT * FROM Stock WHERE Supermarket_ID = ", 
+#                                  sm_id, " AND Product_ID = ", product_id))
+#   df <- dbFetch(res) 
+#   dbClearResult(res)
+#  
+#   return(df %>% 
+#            mutate(Date = as.POSIXct(Date)) %>% 
+#            filter(lubridate::date(Date) == date))
+# 
+# }
+
+
+update_product_stock <- function(sm_id, product_id, date, capacity) {
+ 
+  df <- data.frame(
+    Date = date,
+    Supermarket_ID = sm_id,
+    Product_ID = product_id,
+    Cap = capacity,
+    stringsAsFactors = FALSE
+  )
+  dbSendQuery(con, 'INSERT INTO Stock (Date, Supermarket_ID, Product_ID, Cap) VALUES (:Date, :Supermarket_ID, :Product_ID, :Cap);', df)
+}
+
+update_visitors <- function(sm_id, date, hour, cap) {
+  
+  df <- data.frame(
+    Date = date,
+    Hour = hour,
+    Supermarket_ID = sm_id,
+    Customers = cap
+    )
+  
+  dbSendQuery(con, 'INSERT INTO Visitors (Supermarket_ID, Date, Hour, Customers) VALUES (:Supermarket_ID, :Date, :Hour, :Customers);', df)
+  
+  
+}
+  
 
 get_product_stock <- function(sm_id, product_id, date, full_day = FALSE) {
   
@@ -152,3 +195,4 @@ get_product_stock <- function(sm_id, product_id, date, full_day = FALSE) {
   
   return(result_df)
 }
+
