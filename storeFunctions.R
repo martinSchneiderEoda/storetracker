@@ -1,22 +1,55 @@
-get_customers <- function(sm_ID, date = NULL, hour = NULL) {
-  res <- dbSendQuery(con, 
-                     paste0("SELECT * FROM Visitors WHERE Supermarket_ID = ", sm_ID))
+get_customers <- function(sm_id, date, full_day = TRUE) {
+  current_ts <- Sys.time()
   
-  df <- dbFetch(res)
+  all_dates <- seq(as.POSIXct(lubridate::date(date)), length.out = 24, by = "hours")
   
-  dbClearResult(res)
+  result_df <- tibble(Date = as.POSIXct(character()),
+                      Customers = numeric(),
+                      Supermarket_ID = numeric())
   
-  if(!is.null(date)) {
-    df <- df %>% 
+  for(tmp_date in all_dates) {
+    stock_df <- tbl(con, "Visitors") %>%
+      filter(Supermarket_ID %in% sm_id) %>% 
+      collect() %>% 
+      mutate_at(vars(Date), as.POSIXct) %>% 
+      filter(Date <= current_ts) %>% 
+      mutate(Day = lubridate::date(Date),
+             Hour = hour(Date)) %>% 
+      group_by(Supermarket_ID, Day, Hour) %>% 
+      summarize(Customers = mean(Customers)) %>% 
+      ungroup() %>% 
+      mutate(Date = as.POSIXct(Day) + hours(Hour)) 
+    
+    if (tmp_date <= current_ts) {
+      result_df <-  stock_df %>% 
+        select(-Day, -Hour) %>% 
+        filter(Date <= as.POSIXct(tmp_date, origin = "1970-01-01")) %>% 
+        arrange() %>% 
+        group_by(Supermarket_ID) %>% 
+        slice(n()) %>% 
+        ungroup() %>% 
+        bind_rows(result_df, .)
+      
+    } else {
+      result_df <- stock_df %>% 
+        filter(Hour == hour(as.POSIXct(tmp_date, origin = "1970-01-01"))) %>% 
+        group_by(Supermarket_ID) %>% 
+        summarize(Customers = round(mean(Customers))) %>% 
+        ungroup() %>% 
+        mutate(Date = as.POSIXct(tmp_date, origin = "1970-01-01")) %>% 
+        bind_rows(result_df, .)
+    }
+  }
+  
+  if(full_day){
+    result_df <- result_df %>% 
+      select(-Supermarket_ID)
+  } else {
+    result_df <- result_df %>% 
       filter(Date == date)
   }
   
-  if(!is.null(hour)) {
-    df <- df %>% 
-      filter(Hour == hour)
-  }
-  
-  return(df)
+  return(result_df)
 }
 
 get_auslastung <- function(sm_ID, date) {
@@ -56,3 +89,61 @@ add_product <- function(name) {
   dbClearResult(res)
 }
 
+get_product_stock <- function(sm_id, product_id, date, full_day = FALSE) {
+  
+  current_ts <- Sys.time()
+  
+  if(full_day){
+    all_dates <- seq(as.POSIXct(lubridate::date(date)), length.out = 24, by = "hours")
+  } else {
+    all_dates <- as.POSIXct(date)
+  }
+  
+  result_df <- tibble(Date = as.POSIXct(character()),
+                      Supermarket_ID = numeric(),
+                      Product_ID = numeric(),
+                      Cap = numeric())
+  
+  for(tmp_date in all_dates) {
+    stock_df <- tbl(con, "Stock") %>%
+      filter(Product_ID %in% product_id & Supermarket_ID %in% sm_id) %>% 
+      collect() %>% 
+      mutate_at(vars(Date), as.POSIXct) %>% 
+      filter(Date <= current_ts) %>% 
+      mutate(Day = lubridate::date(Date),
+             Hour = hour(Date)) %>% 
+      group_by(Day, Hour, Supermarket_ID, Product_ID) %>% 
+      summarize(Cap = mean(Cap)) %>% 
+      ungroup() %>% 
+      mutate(Date = as.POSIXct(Day) + hours(Hour)) 
+    
+    if (tmp_date <= current_ts) {
+      
+      result_df <-  stock_df %>% 
+        select(-Day, -Hour) %>% 
+        filter(Date <= as.POSIXct(tmp_date, origin = "1970-01-01")) %>% 
+        arrange() %>% 
+        group_by(Supermarket_ID, Product_ID) %>% 
+        slice(n()) %>% 
+        ungroup() %>% 
+        bind_rows(result_df, .)
+      
+    } else {
+      
+      result_df <- stock_df %>% 
+        filter(Hour == hour(as.POSIXct(tmp_date, origin = "1970-01-01"))) %>% 
+        group_by(Supermarket_ID, Product_ID) %>% 
+        summarize(Cap = round(mean(Cap))) %>% 
+        ungroup() %>% 
+        mutate(Date = as.POSIXct(tmp_date, origin = "1970-01-01")) %>% 
+        bind_rows(result_df, .)
+    }
+  }
+  
+  if(!full_day){
+    result_df <- result_df %>% 
+      select(-Date)
+  }
+  
+  return(result_df)
+}

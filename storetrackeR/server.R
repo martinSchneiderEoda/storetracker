@@ -33,7 +33,8 @@ shinyServer(function(input, output, session) {
 
 
     # nearby stores -----------------------------------------------------------
-    rv <- reactiveValues(nearbystores = c("Arsch of"))
+    rv <- reactiveValues(nearbystores = data.frame(ID = numeric(), Name = character(), 
+                                                   distance = numeric()))
     
     observe({
         
@@ -46,40 +47,35 @@ shinyServer(function(input, output, session) {
         current_location <- c(input$geoloc_lon,
                               input$geoloc_lat)
         
-        dist = 0.5
+        rad = as.numeric(input$searchradio)
         
         coord_df <- data.frame(markets, 
-                               nearby = geosphere::distHaversine(
+                               distance = geosphere::distHaversine(
                                    markets %>% select(Lon, Lat) %>% mutate_all(as.numeric),
-                                   current_location
-                               ) / 1000 < dist)    
+                                   current_location) / 1000) %>% 
+            mutate(nearby =  distance < rad)    
         
         rv$nearbystores <- coord_df %>% 
                 filter(nearby) %>% 
-                mutate(unique_ind = paste(Name, ID)) %>% 
-                pull(unique_ind)
-        
-        rv$nearbystoresIds <- coord_df %>% 
-            filter(nearby) %>% 
-            pull(ID)
+                select(ID, Name, distance) %>% 
+                mutate_at(vars(distance), ~round(.,2))
     })
     
     observe({
         output$visited_store <- renderUI({
             f7AutoComplete(inputId = "visited_store",
                            label = "Store",
-                           choices = rv$nearbystores)
+                           choices = rv$nearbystores$Name)
         })
     })
     
 
     store_capacity_df <- reactive({
-        get_customers(sm_ID = tbl(con, "Supermarket") %>% 
+        get_customers(sm_id = tbl(con, "Supermarket") %>% 
                           as_tibble() %>% 
                           filter(Name == input$capacity_store) %>% 
                           pull(ID), 
-                      date = input$capacity_date) %>% 
-            mutate(Date = as.POSIXct(Date) + hours(Hour))
+                      date = input$capacity_date)
     })
     
     product_stock_df <- reactive({
@@ -97,8 +93,16 @@ shinyServer(function(input, output, session) {
     })
     
     output$store_capacity_plot <- renderPlot({
-        ggplot(store_capacity_df(), aes(x = Date, y = Customers)) +
-            geom_bar(stat = "identity") +
+        ggplot(store_capacity_df() %>% 
+                   filter(between(hour(Date), 9, 20)) %>% 
+                   mutate(Predicted = Date > round(Sys.time(), "hour")), 
+               aes(x = Date, y = Customers)) +
+            geom_bar(stat = "identity", aes(fill = Predicted)) +
+            scale_fill_manual(breaks = c("FALSE", "TRUE"),
+                              labels = c("Recorded", "Predicted"), 
+                              values = c("FALSE" = "black", "TRUE" = "darkgrey"), 
+                              drop = FALSE,
+                              name = NULL) +
             ylim(c(0,100)) +
             xlab("Uhrzeit") +
             ggtitle("Kundenauslastung") +
@@ -107,8 +111,17 @@ shinyServer(function(input, output, session) {
     })
     
     output$product_stock_plot <- renderPlot({
-        ggplot(product_stock_df(), aes(x = Date, y = Cap)) +
-            geom_bar(stat = "identity") +
+        ggplot(product_stock_df() %>% 
+                   filter(between(hour(Date), 9, 20)) %>% 
+                   mutate(Predicted = Date > round(Sys.time(), "hour")), 
+               aes(x = Date, y = Cap)) +
+            geom_bar(stat = "identity", aes(fill = Predicted)) +
+            scale_fill_manual(breaks = c("FALSE", "TRUE"),
+                              labels = c("Recorded", "Predicted"), 
+                              values = c("FALSE" = "black", "TRUE" = "darkgrey"), 
+                              drop = FALSE,
+                              name = NULL) +
+            theme(legend.title = element_blank()) +
             ylim(c(0,100)) + 
             xlab("Uhrzeit") +
             ggtitle("Produktverfügbarkeit") +
@@ -131,19 +144,16 @@ shinyServer(function(input, output, session) {
     output$store_rec_table <- renderDataTable({
         
         wanted_products_ids <- input$searchproducts
-        nearby_stores_ids <- rv$nearbystoresIds
+        nearby_stores_ids <- rv$nearbystores$ID
+        
+        wanted_date <- as.POSIXct(input$searchdate) + hours(input$searchhour)
         
         wanted_store_cap <- get_product_stock(sm_id = nearby_stores_ids, 
                                               product_id = wanted_products_ids,
-                                              date = round_date(Sys.time(), "hour"))
+                                              date = wanted_date)
         wanted_store_cap
 
-        store_names <- tbl(con, "Supermarket") %>%
-            select(ID, Name) %>%
-            filter(ID %in% nearby_stores_ids) %>%
-            collect()
-
-        wanted_store_cap <- left_join(wanted_store_cap, store_names,
+        wanted_store_cap <- left_join(wanted_store_cap, rv$nearbystores,
                                       by = c("Supermarket_ID" = "ID")) %>%
             rename(Supermarket_Name = Name)
 
@@ -162,8 +172,11 @@ shinyServer(function(input, output, session) {
             pivot_wider(names_from = Product_Name,
                         values_from = Cap) %>% 
             ungroup() %>% 
+            mutate(Occupancy = get_customers(sm_id = Supermarket_ID, 
+                   date = wanted_date, full_day = FALSE)$Customers) %>% 
             select(-Supermarket_ID) %>% 
-            rename(Markt = "Supermarket_Name") %>% 
+            rename(Markt = "Supermarket_Name",
+                   "Distance [KM]" = distance) %>% 
             datatable(options = list(dom = "t",
                                      scrollX = TRUE),
                       rownames = FALSE)
