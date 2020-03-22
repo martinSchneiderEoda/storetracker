@@ -19,3 +19,6 @@ Die Lösung wurde mit R shiny entwickelt und greift zusätzlich auf leaflet.js z
 ## What's next for 1_17_storelocator
 Prototyp unter [link] (https://supermarketlocator.shinyapps.io/storetrackeR/)
 
+## Video
+[https://www.youtube.com/watch?v=UWoYcCzhSO4]
+
