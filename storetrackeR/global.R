@@ -17,14 +17,14 @@ library(geoloc)
 library(revgeo)
 library(osmdata)
 library(sf)
-
+library(dbplyr)
 # source -------------------------------------------------------------------------
 
-source("../storeFunctions.R")
-source("../uiFunctions.R")
+source("storeFunctions.R")
+source("uiFunctions.R")
 
 
-con <- dbConnect(RSQLite::SQLite(), "../storeTrackeDB.sqlite")
+con <- dbConnect(RSQLite::SQLite(), "storeTrackeDB.sqlite")
 
 
 # -------------------------------------------------------------------------

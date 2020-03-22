@@ -3,7 +3,7 @@
 f7Page(title = "storetracker",
        geoloc::onload_geoloc(),
        f7TabLayout(
-           navbar = f7Navbar(title = "Storetracker"),
+           navbar = f7Navbar(title = "Storetracker !!!Prototyp Artikel Daten sind simuliert!!!"),
            f7Tabs(
                f7Tab(tabName = "Store Capacity",
                      f7Select(inputId = "capacity_store",
