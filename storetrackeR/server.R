@@ -159,19 +159,22 @@ shinyServer(function(input, output, session) {
         markets <- coord_df %>% 
             filter(nearby)
         
-        print(markets)
+      
         
-        markets$prio <- sample(c("gering", "mittel", "hoch"), size = nrow(markets),
-                               replace = TRUE, prob = c(0.7, 0.2, 0.1))
-        
-        
+        markets <- left_join(markets, rv$wanted_store_cap,
+                             c("ID" = "Supermarket_ID"))
+         
+      
+        print(markets$Score)
         
         getColor <- function(markets) {
-            sapply(markets$prio, function(prio) {
-                print(prio)
-                if(prio == "hoch") {
+            sapply(markets$Score, function(Score) {
+                
+                if(all(is.na(Score))) {
+                    "orange"
+                } else if (Score > 75) {
                     "green"
-                } else if(prio == "mittel") {
+                } else if (Score > 25 ) {
                     "orange"
                 } else {
                     "red"
@@ -225,21 +228,24 @@ shinyServer(function(input, output, session) {
                                       by = c("Product_ID" = "ID")) %>%
             rename(Product_Name = Name)
 
-        wanted_store_cap %>%
+        wanted_store_cap <- wanted_store_cap %>%
             select(-Product_ID) %>%
             pivot_wider(names_from = Product_Name,
                         values_from = Cap) %>% 
             ungroup() %>% 
             mutate(Occupancy = get_customers(sm_id = Supermarket_ID, 
                    date = wanted_date, full_day = FALSE)$Customers) %>% 
-            select(-Supermarket_ID) %>% 
             mutate(scaled_distance = 100 - (distance * 100 / as.numeric(input$searchradio)),
                    transformed_occ = 100 - Occupancy) %T>%
             {score <<- select(., -Supermarket_Name, -Occupancy, -distance) %>% 
                 rowSums()} %>% 
             mutate(Score = round(score / (nrow(product_names) + 2))) %>% 
-            arrange(desc(Score)) %>% 
-            select(-scaled_distance, -transformed_occ) %>% 
+            arrange(desc(Score))
+        
+        rv$wanted_store_cap <- wanted_store_cap
+            
+        wanted_store_cap %>%  
+            select(-scaled_distance, -transformed_occ, -Supermarket_ID) %>% 
             rename(Markt = "Supermarket_Name",
                    "Distance [KM]" = distance) %>% 
             datatable(options = list(dom = "t",
