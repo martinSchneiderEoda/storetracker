@@ -232,6 +232,13 @@ shinyServer(function(input, output, session) {
             mutate(Occupancy = get_customers(sm_id = Supermarket_ID, 
                    date = wanted_date, full_day = FALSE)$Customers) %>% 
             select(-Supermarket_ID) %>% 
+            mutate(scaled_distance = 100 - (distance * 100 / as.numeric(input$searchradio)),
+                   transformed_occ = 100 - Occupancy) %T>%
+            {score <<- select(., -Supermarket_Name, -Occupancy, -distance) %>% 
+                rowSums()} %>% 
+            mutate(Score = round(score / (nrow(product_names) + 2))) %>% 
+            arrange(desc(Score)) %>% 
+            select(-scaled_distance, -transformed_occ) %>% 
             rename(Markt = "Supermarket_Name",
                    "Distance [KM]" = distance) %>% 
             datatable(options = list(dom = "t",
