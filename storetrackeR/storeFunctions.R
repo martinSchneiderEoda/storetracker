@@ -28,14 +28,15 @@ get_customers <- function(sm_id, date, full_day = TRUE) {
       ungroup() %>% 
       mutate(Date = as.POSIXct(Day) + hours(Hour)) 
     
-    if (tmp_date <= current_ts) {
+    if (tmp_date <= round_date(current_ts, "hour") + hours(1)) {
       result_df <-  stock_df %>% 
         select(-Day, -Hour) %>% 
         filter(Date <= as.POSIXct(tmp_date, origin = "1970-01-01")) %>% 
         arrange() %>% 
         group_by(Supermarket_ID) %>% 
         slice(n()) %>% 
-        ungroup() %>% 
+        ungroup() %>%
+        mutate(Date = as.POSIXct(tmp_date, origin = "1970-01-01")) %>% 
         bind_rows(result_df, .)
       
     } else {
@@ -150,7 +151,7 @@ get_product_stock <- function(sm_id, product_id, date, full_day = FALSE) {
       ungroup() %>% 
       mutate(Date = as.POSIXct(Day) + hours(Hour)) 
     
-    if (tmp_date <= current_ts) {
+    if (tmp_date <= round_date(current_ts, "hour") + hours(1)) {
       
       result_df <-  stock_df %>% 
         select(-Day, -Hour) %>% 
@@ -159,6 +160,7 @@ get_product_stock <- function(sm_id, product_id, date, full_day = FALSE) {
         group_by(Supermarket_ID, Product_ID) %>% 
         slice(n()) %>% 
         ungroup() %>% 
+        mutate(Date = as.POSIXct(tmp_date, origin = "1970-01-01")) %>% 
         bind_rows(result_df, .)
       
     } else {
