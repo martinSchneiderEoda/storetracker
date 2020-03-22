@@ -65,19 +65,10 @@ shinyServer(function(input, output, session) {
         req(input$geoloc_lon)
         req(input$geoloc_lat)
         
-        markets <- tbl(con, "Supermarket") %>% 
-            collect()
+        coord_df <- get_nearby_markets(geoloc_lon = input$geoloc_lon,
+                                       geoloc_lat = input$geoloc_lat,
+                                       searchradio = input$searchradio)
         
-        current_location <- c(input$geoloc_lon,
-                              input$geoloc_lat)
-        
-        rad = as.numeric(input$searchradio)
-        
-        coord_df <- data.frame(markets, 
-                               distance = geosphere::distHaversine(
-                                   markets %>% select(Lon, Lat) %>% mutate_all(as.numeric),
-                                   current_location) / 1000) %>% 
-            mutate(nearby =  distance < rad)    
         
         rv$nearbystores <- coord_df %>% 
                 filter(nearby) %>% 
@@ -160,9 +151,20 @@ shinyServer(function(input, output, session) {
         
         req(input$geoloc_lon)
         req(input$geoloc_lat)
-        leaflet() %>% 
+        
+        coord_df <- get_nearby_markets(geoloc_lon = input$geoloc_lon,
+                                       geoloc_lat = input$geoloc_lat,
+                                       searchradio = input$searchradio)
+        
+        markets <- coord_df %>% 
+            filter(nearby)
+        
+        leaflet() %>%
             addTiles() %>%
-            setView(as.numeric(input$geoloc_lon), as.numeric(input$geoloc_lat), zoom = 17)
+            setView(as.numeric(input$geoloc_lon), as.numeric(input$geoloc_lat), zoom = 14) %>%
+            addMarkers(lng = as.numeric(markets$Lon), lat = as.numeric(markets$Lat))
+        
+        
     })
     
     # store table ------------------------------------------------------------

@@ -195,3 +195,23 @@ get_product_stock <- function(sm_id, product_id, date, full_day = FALSE) {
   return(result_df)
 }
 
+get_nearby_markets <- function(geoloc_lon, geoloc_lat, searchradio) {
+  req(geoloc_lon)
+  req(geoloc_lat)
+  
+  markets <- tbl(con, "Supermarket") %>% 
+    collect()
+  
+  current_location <- c(geoloc_lon,
+                        geoloc_lat)
+  
+  rad = as.numeric(searchradio)
+  
+  coord_df <- data.frame(markets, 
+                         distance = geosphere::distHaversine(
+                           markets %>% select(Lon, Lat) %>% mutate_all(as.numeric),
+                           current_location) / 1000) %>% 
+    mutate(nearby =  distance < rad)  
+  
+  return(coord_df)
+}
