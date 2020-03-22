@@ -159,10 +159,42 @@ shinyServer(function(input, output, session) {
         markets <- coord_df %>% 
             filter(nearby)
         
+        
+        markets$prio <- sample(c("gering", "mittel", "hoch"), size = nrow(markets),
+                               replace = TRUE, prob = c(0.7, 0.2, 0.1))
+        
+        
+        
+        getColor <- function(markets) {
+            sapply(markets$prio, function(prio) {
+                print(prio)
+                if(prio == "hoch") {
+                    "green"
+                } else if(prio == "mittel") {
+                    "orange"
+                } else {
+                    "red"
+                } })
+        }
+        
+        icons <- awesomeIcons(
+            icon = "shopping-cart",
+            iconColor = 'black',
+            library = 'fa',
+            markerColor = getColor(markets)
+        )
+        
+        icons$markerColor <- as.character(icons$markerColor)
+        
+        
+        
         leaflet() %>%
             addTiles() %>%
             setView(as.numeric(input$geoloc_lon), as.numeric(input$geoloc_lat), zoom = 14) %>%
-            addMarkers(lng = as.numeric(markets$Lon), lat = as.numeric(markets$Lat))
+            addAwesomeMarkers(lng = as.numeric(markets$Lon),
+                              lat = as.numeric(markets$Lat), icon=icons,
+                              label = markets$Name)
+            #addMarkers(lng = as.numeric(markets$Lon), lat = as.numeric(markets$Lat))
         
         
     })
