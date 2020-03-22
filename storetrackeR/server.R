@@ -165,7 +165,7 @@ shinyServer(function(input, output, session) {
                              c("ID" = "Supermarket_ID"))
          
       
-        print(markets$Score)
+        #print(markets$Score)
         
         getColor <- function(markets) {
             sapply(markets$Score, function(Score) {
