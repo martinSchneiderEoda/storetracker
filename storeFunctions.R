@@ -126,12 +126,11 @@ update_visitors <- function(sm_id, date, hour, cap) {
   
   df <- data.frame(
     Date = date,
-    Hour = hour,
     Supermarket_ID = sm_id,
     Customers = cap
     )
   
-  dbSendQuery(con, 'INSERT INTO Visitors (Supermarket_ID, Date, Hour, Customers) VALUES (:Supermarket_ID, :Date, :Hour, :Customers);', df)
+  dbSendQuery(con, 'INSERT INTO Visitors (Supermarket_ID, Date, Customers) VALUES (:Supermarket_ID, :Date, :Customers);', df)
   
   
 }

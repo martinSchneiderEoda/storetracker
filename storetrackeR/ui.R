@@ -7,7 +7,7 @@ f7Page(title = "storetracker",
            f7Tabs(
                f7Tab(tabName = "Store Capacity",
                      f7Select(inputId = "capacity_store",
-                              label = "Store ID",
+                              label = "Store",
                               choices = store_choices),
                      f7DatePicker(inputId = "capacity_date",
                                   label = "Date",

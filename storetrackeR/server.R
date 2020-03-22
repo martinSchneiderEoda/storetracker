@@ -51,8 +51,7 @@ shinyServer(function(input, output, session) {
         })
         
         update_visitors(sm_id = stores[input$visited_store],
-                        date = as.character(Sys.Date()),
-                        hour = hour(Sys.time()),
+                        date = as.character(Sys.time()),
                         cap = input$rate_occupancy)
         
     })
@@ -161,9 +160,17 @@ shinyServer(function(input, output, session) {
         
         req(input$geoloc_lon)
         req(input$geoloc_lat)
-        leaflet() %>% 
+        # leaflet() %>% 
+        #     addTiles() %>%
+        #     setView(as.numeric(input$geoloc_lon), as.numeric(input$geoloc_lat), zoom = 17)
+        # 
+        
+        leaflet() %>%
             addTiles() %>%
-            setView(as.numeric(input$geoloc_lon), as.numeric(input$geoloc_lat), zoom = 17)
+            setView(as.numeric(input$geoloc_lon), as.numeric(input$geoloc_lat), zoom = 16) %>%
+            addMarkers(lng = as.numeric(markets$Lon), lat = as.numeric(markets$Lat))
+        
+        
     })
     
     # store table ------------------------------------------------------------
