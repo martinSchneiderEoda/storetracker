@@ -14,7 +14,9 @@ library(ggplot2)
 library(tidyr)
 library(stringr)
 library(geoloc)
-
+library(revgeo)
+library(osmdata)
+library(sf)
 
 # source -------------------------------------------------------------------------
 
