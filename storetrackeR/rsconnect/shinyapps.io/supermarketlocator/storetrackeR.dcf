@@ -5,8 +5,8 @@ account: supermarketlocator
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 1976913
-bundleId: 2908086
+bundleId: 2908067
 url: https://supermarketlocator.shinyapps.io/storetrackeR/
-when: 1584881118.08824
+when: 1584880518.7169
 asMultiple: FALSE
 asStatic: FALSE
