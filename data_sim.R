@@ -5,6 +5,8 @@ library(tsibbledata)
 library(tidyverse)
 library(lubridate)
 library(tsibble)
+library(osmdata)
+library(revgeo)
 
 
 
@@ -92,9 +94,12 @@ products <- tibble(ID = 1:3, Name = c("Klopapier", "Seife", "Nudeln"))
 
 dbWriteTable(con, "Products", products)
 
-res <- dbSendQuery(con, "SELECT * FROM Products")
-dbFetch(res)
+new_products <- read_delim("Lebensmittel.csv", delim = "\t", col_names = FALSE) %>% 
+  filter(!X1 %in% c("Nudeln", "Seife", "Bananen", "Toilletenpapier")) %>% 
+  rename(Name = X1) %>% 
+  mutate(ID = (1:n()) + 4)
 
+dbWriteTable(con, "Products", new_products, append = TRUE)
 
 # Product Capacity --------------------------------------------------------
 prod_cap <- expand.grid(Date = seq.POSIXt(as.POSIXct("2020-03-16"),as.POSIXct("2020-03-23"), by = "hour"),

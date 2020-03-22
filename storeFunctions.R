@@ -204,16 +204,32 @@ get_nearby_markets <- function(geoloc_lon, geoloc_lat, searchradio) {
 
 get_places <- function(city, key = "shop", value = "supermarket") {
   
-  q <- add_osm_feature(opq(getbb(city)),   key = "shop", value = "supermarket")
+  cols_osm <- c("osm_id", "name", "addr.city", "addr.country", "addr.housename", "addr.housenumber", "addr.postcode", "addr.street", 
+                "addr.suburb", "brand", "brand.wikidata", "brand.wikipedia", "building", "building.colour", "building.height", "building.levels", 
+                "building.part", "contact.email", "contact.mobile", "contact.phone", "contact.website", "email", "fax", "height", 
+                "internet_access", "note", "old_name", "opening_hours", "operator", "organic", "payment.cash", "payment.coins", 
+                "payment.contactless", "payment.credit_cards", "payment.debit_cards", "payment.girocard", "payment.mastercard", "payment.notes", "payment.visa", "phone", 
+                "ref", "roof.colour", "roof.levels", "roof.shape", "shop", "source", "source.date", "toilets.wheelchair", 
+                "website", "wheelchair", "geometry")
+  
+  q <- add_osm_feature(opq(getbb(city), timeout = 120),   key = "shop", value = "supermarket")
   osm_places <- osmdata_sf(q)
   sm_points  <- osm_places$osm_points[!is.na(osm_places$osm_points$name), ]
   sm_polygons <- st_centroid(osm_places$osm_polygons[!is.na(osm_places$osm_polygons$name), ])
   
-  sm_points[ setdiff(names(sm_points), cols_osm)] <- NULL
-  sm_points[ setdiff(cols_osm, names(sm_points))] <- NA
+  if(nrow(sm_points) + nrow(sm_polygons) == 0) {
+    return(data.frame())
+  }
   
-  sm_polygons[ setdiff(names(sm_polygons), cols_osm)] <- NULL
-  sm_polygons[ setdiff(cols_osm, names(sm_polygons))] <- NA
+  if(nrow(sm_points) > 0) {
+    sm_points[ setdiff(names(sm_points), cols_osm)] <- NULL
+    sm_points[ setdiff(cols_osm, names(sm_points))] <- NA
+  }
+  
+  if(nrow(sm_polygons) > 0) {
+    sm_polygons[ setdiff(names(sm_polygons), cols_osm)] <- NULL
+    sm_polygons[ setdiff(cols_osm, names(sm_polygons))] <- NA
+  }
   
   osm_places <- rbind(sm_points, sm_polygons)
   
@@ -238,7 +254,11 @@ check_region_data <- function (Lon, Lat){
                                   provider = 'photon', 
                                   output="frame")$city)
   
+  geo_city <- iconv(geo_city, from = "UTF-8", to = "UTF-8")
+  
   db_cities <- tbl(con, "Supermarket") %>% collect() %>% distinct(City) %>% pull()
+  db_addr_cities <- tbl(con, "Supermarket") %>% collect() %>% distinct(addr.city) %>% pull()
+  
   max_id <- tbl(con, "Supermarket") %>% collect() %>%  nrow() 
   
   if(geo_city %in% db_cities) {
@@ -246,17 +266,34 @@ check_region_data <- function (Lon, Lat){
   }
   
   sm_data <- get_places(geo_city)
+  
+  if(nrow(sm_data) == 0){
+    return(NULL)
+  }
+  
   class(sm_data) <- "data.frame"
   
   sm_data <- sm_data %>%
     as_tibble() %>% 
+    filter(!is.na(addr.city)) %>% 
+    filter(!addr.city %in% db_addr_cities) 
+    
+  
+  if(nrow(sm_data) == 0){
+    return(NULL)
+  }
+  sm_data <- sm_data %>% 
+    mutate_if(is.character, ~iconv(., from = "UTF-8", to = "UTF-8")) %>% 
     mutate(City = geo_city,
-           ID = (1:n()) + max_id) %>% 
+           ID = (1:n()) + max_id) %>%
+    rename(Name = name) %>% 
     group_by(Name) %>% 
     mutate(Number = 1:n()) %>% 
     ungroup() %>% 
-    mutate(Name = if_else(Number == 1, Name, paste0(Name, "_", City, "_", Number))) %>% 
+    mutate(Name = if_else(Number == 1, paste0(Name, "_", City), paste0(Name, "_", City, "_", Number))) %>% 
     select(-Number)
   
   dbWriteTable(con, "Supermarket", sm_data, append = TRUE)
+  
+  return(NULL)
 }
