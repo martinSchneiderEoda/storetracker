@@ -9,18 +9,18 @@ library(tsibble)
 
 
 # Kassel Stores -----------------------------------------------------------
-sm_df <- read_delim("supermarkets.csv", delim = "\t") %>% filter(!is.na(geometry))
+sm_df <- read_delim("supermarkets.csv", delim = "\t", locale = locale(encoding = "ISO-8859-2")) %>% filter(!is.na(geometry))
 
-sm_df <- tibble(ID = 1:nrow(sm_df), Name = if_else(is.na(sm_df$name), "", sm_df$name), 
-                Lon = unlist(str_extract_all(sm_df$geometry, "[0-9]+\\.[0-9]+") %>% lapply("[[",1)), 
-                Lat = unlist(str_extract_all(sm_df$geometry, "[0-9]+\\.[0-9]+") %>% lapply("[[",2)), 
-                City = "Kassel") %>% 
+sm_df <- sm_df %>% 
+  select(name, addr.city, addr.housenumber, addr.postcode, addr.street, brand, opening_hours, geometry) %>% 
+  mutate(ID = 1:nrow(sm_df), 
+         Lon = unlist(str_extract_all(sm_df$geometry, "[0-9]+\\.[0-9]+") %>% lapply("[[",1)), 
+         Lat = unlist(str_extract_all(sm_df$geometry, "[0-9]+\\.[0-9]+") %>% lapply("[[",2)), 
+         City = "Kassel") %>% 
+  rename(Name = name) %>% 
   mutate_at(vars(Lon, Lat), as.numeric) %>% 
-  group_by(Name) %>% 
-  mutate(Number = 1:n()) %>% 
-  ungroup() %>% 
-  mutate(Name = if_else(Number == 1, Name, paste0(Name, "_", Number))) %>% 
-  select(-Number)
+  select(-geometry)
+  
 
 
 con <- dbConnect(RSQLite::SQLite(), "storeTrackeDB.sqlite")

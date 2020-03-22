@@ -96,22 +96,8 @@ add_product <- function(name) {
 }
 
 
-
-# get_product_stock <- function(sm_id, product_id, date) {
-#   res <- dbSendQuery(con, paste0("SELECT * FROM Stock WHERE Supermarket_ID = ", 
-#                                  sm_id, " AND Product_ID = ", product_id))
-#   df <- dbFetch(res) 
-#   dbClearResult(res)
-#  
-#   return(df %>% 
-#            mutate(Date = as.POSIXct(Date)) %>% 
-#            filter(lubridate::date(Date) == date))
-# 
-# }
-
-
 update_product_stock <- function(sm_id, product_id, date, capacity) {
- 
+  
   df <- data.frame(
     Date = date,
     Supermarket_ID = sm_id,
@@ -128,13 +114,13 @@ update_visitors <- function(sm_id, date, hour, cap) {
     Date = date,
     Supermarket_ID = sm_id,
     Customers = cap
-    )
+  )
   
   dbSendQuery(con, 'INSERT INTO Visitors (Supermarket_ID, Date, Customers) VALUES (:Supermarket_ID, :Date, :Customers);', df)
   
   
 }
-  
+
 
 get_product_stock <- function(sm_id, product_id, date, full_day = FALSE) {
   
@@ -214,4 +200,63 @@ get_nearby_markets <- function(geoloc_lon, geoloc_lat, searchradio) {
     mutate(nearby =  distance < rad)  
   
   return(coord_df)
+}
+
+get_places <- function(city, key = "shop", value = "supermarket") {
+  
+  q <- add_osm_feature(opq(getbb(city)),   key = "shop", value = "supermarket")
+  osm_places <- osmdata_sf(q)
+  sm_points  <- osm_places$osm_points[!is.na(osm_places$osm_points$name), ]
+  sm_polygons <- st_centroid(osm_places$osm_polygons[!is.na(osm_places$osm_polygons$name), ])
+  
+  sm_points[ setdiff(names(sm_points), cols_osm)] <- NULL
+  sm_points[ setdiff(cols_osm, names(sm_points))] <- NA
+  
+  sm_polygons[ setdiff(names(sm_polygons), cols_osm)] <- NULL
+  sm_polygons[ setdiff(cols_osm, names(sm_polygons))] <- NA
+  
+  osm_places <- rbind(sm_points, sm_polygons)
+  
+  
+  osm_places$brand[is.na(osm_places$brand)] <- 
+    stringi::stri_trans_totitle(
+      str_extract(osm_places$name[is.na(osm_places$brand)], 
+                  pattern = "Aldi|Edeka|Rewe|tegut|Tegut|Lidl|ALDI|REWE|LIDL"))
+  
+  osm_places <- osm_places %>% 
+    select(name, addr.street, addr.housenumber, addr.postcode, addr.city, opening_hours, brand, geometry) %>% 
+    mutate(Lon = st_coordinates(geometry)[,1], Lat = st_coordinates(geometry)[,2]) 
+  
+  return(osm_places)
+  
+}
+
+
+check_region_data <- function (Lon, Lat){
+  geo_city <- as.character(revgeo(longitude = Lon, 
+                                  latitude = Lat, 
+                                  provider = 'photon', 
+                                  output="frame")$city)
+  
+  db_cities <- tbl(con, "Supermarket") %>% collect() %>% distinct(City) %>% pull()
+  max_id <- tbl(con, "Supermarket") %>% collect() %>%  nrow() 
+  
+  if(geo_city %in% db_cities) {
+    return(NULL)
+  }
+  
+  sm_data <- get_places(geo_city)
+  class(sm_data) <- "data.frame"
+  
+  sm_data <- sm_data %>%
+    as_tibble() %>% 
+    mutate(City = geo_city,
+           ID = (1:n()) + max_id) %>% 
+    group_by(Name) %>% 
+    mutate(Number = 1:n()) %>% 
+    ungroup() %>% 
+    mutate(Name = if_else(Number == 1, Name, paste0(Name, "_", City, "_", Number))) %>% 
+    select(-Number)
+  
+  dbWriteTable(con, "Supermarket", sm_data, append = TRUE)
 }
