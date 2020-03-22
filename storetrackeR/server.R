@@ -118,7 +118,7 @@ shinyServer(function(input, output, session) {
     output$store_capacity_plot <- renderPlot({
         ggplot(store_capacity_df() %>% 
                    filter(between(hour(Date), 9, 20)) %>% 
-                   mutate(Predicted = Date > round(Sys.time(), "hour")), 
+                   mutate(Predicted = Date >= round(Sys.time(), "hour") + hours(1)), 
                aes(x = Date, y = Customers)) +
             geom_bar(stat = "identity", aes(fill = Predicted)) +
             scale_fill_manual(breaks = c("FALSE", "TRUE"),
@@ -136,7 +136,7 @@ shinyServer(function(input, output, session) {
     output$product_stock_plot <- renderPlot({
         ggplot(product_stock_df() %>% 
                    filter(between(hour(Date), 9, 20)) %>% 
-                   mutate(Predicted = Date > round(Sys.time(), "hour")), 
+                   mutate(Predicted = Date >= round(Sys.time(), "hour") + hours(1)), 
                aes(x = Date, y = Cap)) +
             geom_bar(stat = "identity", aes(fill = Predicted)) +
             scale_fill_manual(breaks = c("FALSE", "TRUE"),

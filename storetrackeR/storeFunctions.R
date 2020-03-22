@@ -29,24 +29,31 @@ get_customers <- function(sm_id, date, full_day = TRUE) {
       mutate(Date = as.POSIXct(Day) + hours(Hour)) 
     
     if (tmp_date <= round_date(current_ts, "hour") + hours(1)) {
-      result_df <-  stock_df %>% 
+      tmp_df <-  stock_df %>% 
         select(-Day, -Hour) %>% 
         filter(Date <= as.POSIXct(tmp_date, origin = "1970-01-01")) %>% 
         arrange() %>% 
         group_by(Supermarket_ID) %>% 
         slice(n()) %>% 
-        ungroup() %>%
-        mutate(Date = as.POSIXct(tmp_date, origin = "1970-01-01")) %>% 
-        bind_rows(result_df, .)
+        ungroup() 
       
+      if(nrow(tmp_df) > 0){
+        result_df <- tmp_df %>% 
+          mutate(Date = as.POSIXct(tmp_date, origin = "1970-01-01")) %>% 
+          bind_rows(result_df, .)
+      }
     } else {
-      result_df <- stock_df %>% 
+      tmp_df <- stock_df %>% 
         filter(Hour == hour(as.POSIXct(tmp_date, origin = "1970-01-01"))) %>% 
         group_by(Supermarket_ID) %>% 
         summarize(Customers = round(mean(Customers))) %>% 
-        ungroup() %>% 
-        mutate(Date = as.POSIXct(tmp_date, origin = "1970-01-01")) %>% 
-        bind_rows(result_df, .)
+        ungroup() 
+      
+      if(nrow(tmp_df) > 0){
+        result_df <- tmp_df %>% 
+          mutate(Date = as.POSIXct(tmp_date, origin = "1970-01-01")) %>% 
+          bind_rows(result_df, .)
+      }
     }
   }
   
@@ -153,25 +160,32 @@ get_product_stock <- function(sm_id, product_id, date, full_day = FALSE) {
     
     if (tmp_date <= round_date(current_ts, "hour") + hours(1)) {
       
-      result_df <-  stock_df %>% 
+      tmp_df <-  stock_df %>% 
         select(-Day, -Hour) %>% 
         filter(Date <= as.POSIXct(tmp_date, origin = "1970-01-01")) %>% 
-        arrange() %>% 
+        arrange(Date) %>% 
         group_by(Supermarket_ID, Product_ID) %>% 
         slice(n()) %>% 
-        ungroup() %>% 
-        mutate(Date = as.POSIXct(tmp_date, origin = "1970-01-01")) %>% 
-        bind_rows(result_df, .)
+        ungroup() 
+      
+      if(nrow(tmp_df) > 0){
+        result_df <- tmp_df %>% 
+          mutate(Date = as.POSIXct(tmp_date, origin = "1970-01-01")) %>% 
+          bind_rows(result_df, .)
+      }
       
     } else {
       
-      result_df <- stock_df %>% 
+      tmp_df <- stock_df %>% 
         filter(Hour == hour(as.POSIXct(tmp_date, origin = "1970-01-01"))) %>% 
         group_by(Supermarket_ID, Product_ID) %>% 
         summarize(Cap = round(mean(Cap))) %>% 
-        ungroup() %>% 
-        mutate(Date = as.POSIXct(tmp_date, origin = "1970-01-01")) %>% 
-        bind_rows(result_df, .)
+        ungroup() 
+      if(nrow(tmp_df) > 0){
+        result_df <- tmp_df %>% 
+          mutate(Date = as.POSIXct(tmp_date, origin = "1970-01-01")) %>% 
+          bind_rows(result_df, .)
+      }
     }
   }
   
@@ -214,7 +228,7 @@ get_places <- function(city, key = "shop", value = "supermarket") {
                 "ref", "roof.colour", "roof.levels", "roof.shape", "shop", "source", "source.date", "toilets.wheelchair", 
                 "website", "wheelchair", "geometry")
   
-  q <- add_osm_feature(opq(getbb(city), timeout = 120),   key = "shop", value = "supermarket")
+  q <- add_osm_feature(opq(getbb(city), timeout = 600),   key = "shop", value = "supermarket")
   osm_places <- osmdata_sf(q)
   sm_points  <- osm_places$osm_points[!is.na(osm_places$osm_points$name), ]
   sm_polygons <- st_centroid(osm_places$osm_polygons[!is.na(osm_places$osm_polygons$name), ])
@@ -293,7 +307,7 @@ check_region_data <- function (Lon, Lat){
     mutate(Number = 1:n()) %>% 
     ungroup() %>% 
     mutate(Name = if_else(Number == 1, paste0(Name, "_", City), paste0(Name, "_", City, "_", Number))) %>% 
-    select(-Number)
+    select(-Number, -geometry)
   
   dbWriteTable(con, "Supermarket", sm_data, append = TRUE)
   
