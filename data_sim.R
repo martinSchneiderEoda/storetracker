@@ -5,22 +5,24 @@ library(tsibbledata)
 library(tidyverse)
 library(lubridate)
 library(tsibble)
+library(osmdata)
+library(revgeo)
 
 
 
 # Kassel Stores -----------------------------------------------------------
-sm_df <- read_delim("supermarkets.csv", delim = "\t") %>% filter(!is.na(geometry))
+sm_df <- read_delim("supermarkets.csv", delim = "\t", locale = locale(encoding = "ISO-8859-2")) %>% filter(!is.na(geometry))
 
-sm_df <- tibble(ID = 1:nrow(sm_df), Name = if_else(is.na(sm_df$name), "", sm_df$name), 
-                Lon = unlist(str_extract_all(sm_df$geometry, "[0-9]+\\.[0-9]+") %>% lapply("[[",1)), 
-                Lat = unlist(str_extract_all(sm_df$geometry, "[0-9]+\\.[0-9]+") %>% lapply("[[",2)), 
-                City = "Kassel") %>% 
+sm_df <- sm_df %>% 
+  select(name, addr.city, addr.housenumber, addr.postcode, addr.street, brand, opening_hours, geometry) %>% 
+  mutate(ID = 1:nrow(sm_df), 
+         Lon = unlist(str_extract_all(sm_df$geometry, "[0-9]+\\.[0-9]+") %>% lapply("[[",1)), 
+         Lat = unlist(str_extract_all(sm_df$geometry, "[0-9]+\\.[0-9]+") %>% lapply("[[",2)), 
+         City = "Kassel") %>% 
+  rename(Name = name) %>% 
   mutate_at(vars(Lon, Lat), as.numeric) %>% 
-  group_by(Name) %>% 
-  mutate(Number = 1:n()) %>% 
-  ungroup() %>% 
-  mutate(Name = if_else(Number == 1, Name, paste0(Name, "_", Number))) %>% 
-  select(-Number)
+  select(-geometry)
+  
 
 
 con <- dbConnect(RSQLite::SQLite(), "storeTrackeDB.sqlite")
@@ -92,9 +94,12 @@ products <- tibble(ID = 1:3, Name = c("Klopapier", "Seife", "Nudeln"))
 
 dbWriteTable(con, "Products", products)
 
-res <- dbSendQuery(con, "SELECT * FROM Products")
-dbFetch(res)
+new_products <- read_delim("Lebensmittel.csv", delim = "\t", col_names = FALSE) %>% 
+  filter(!X1 %in% c("Nudeln", "Seife", "Bananen", "Toilletenpapier")) %>% 
+  rename(Name = X1) %>% 
+  mutate(ID = (1:n()) + 4)
 
+dbWriteTable(con, "Products", new_products, append = TRUE)
 
 # Product Capacity --------------------------------------------------------
 prod_cap <- expand.grid(Date = seq.POSIXt(as.POSIXct("2020-03-16"),as.POSIXct("2020-03-23"), by = "hour"),

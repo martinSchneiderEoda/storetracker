@@ -14,7 +14,9 @@ library(ggplot2)
 library(tidyr)
 library(stringr)
 library(geoloc)
-
+library(revgeo)
+library(osmdata)
+library(sf)
 
 # source -------------------------------------------------------------------------
 
@@ -28,6 +30,7 @@ con <- dbConnect(RSQLite::SQLite(), "../storeTrackeDB.sqlite")
 # -------------------------------------------------------------------------
 
 # replace with db
+
 product_choices <- tbl(con, "Products") %>% pull(ID) 
 
 names(product_choices) <- tbl(con, "Products") %>% pull(Name) 

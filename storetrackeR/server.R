@@ -61,6 +61,13 @@ shinyServer(function(input, output, session) {
                                                    distance = numeric()))
     
     observe({
+      req(input$geoloc_lon)
+      req(input$geoloc_lat)
+      
+      check_region_data(Lon = input$geoloc_lon,
+                        Lat = input$geoloc_lat)
+    })
+    observe({
         
         req(input$geoloc_lon)
         req(input$geoloc_lat)
@@ -165,7 +172,7 @@ shinyServer(function(input, output, session) {
                              c("ID" = "Supermarket_ID"))
          
       
-        print(markets$Score)
+        #print(markets$Score)
         
         getColor <- function(markets) {
             sapply(markets$Score, function(Score) {
