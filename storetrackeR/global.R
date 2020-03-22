@@ -20,11 +20,11 @@ library(sf)
 
 # source -------------------------------------------------------------------------
 
-source("../storeFunctions.R")
-source("../uiFunctions.R")
+source("storeFunctions.R")
+source("uiFunctions.R")
 
 
-con <- dbConnect(RSQLite::SQLite(), "../storeTrackeDB.sqlite")
+con <- dbConnect(RSQLite::SQLite(), "storeTrackeDB.sqlite")
 
 
 # -------------------------------------------------------------------------
