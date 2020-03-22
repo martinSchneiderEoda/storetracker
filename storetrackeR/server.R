@@ -159,6 +159,7 @@ shinyServer(function(input, output, session) {
         markets <- coord_df %>% 
             filter(nearby)
         
+        print(markets)
         
         markets$prio <- sample(c("gering", "mittel", "hoch"), size = nrow(markets),
                                replace = TRUE, prob = c(0.7, 0.2, 0.1))
